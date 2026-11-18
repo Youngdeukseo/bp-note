@@ -105,3 +105,62 @@ input:focus { outline: none; border-color: var(--teal); }
 .wchart { margin-top: 10px; }
 .chart .l-w { fill: none; stroke: #0ea5e9; stroke-width: 2; }
 .chart .d-w { fill: #0ea5e9; }
+
+/* 5개 탭 */
+.tabs button { font-size: 15px; padding: 16px 0; }
+
+/* 구간 선택 */
+.week-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 2px 4px; }
+.seg { display: inline-flex; background: #e6f2f0; border-radius: 12px; padding: 3px; }
+.seg button { border: none; background: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; color: var(--muted); font-size: 14px; }
+.seg button.on { background: #fff; color: var(--teal); box-shadow: 0 1px 2px rgba(15, 23, 42, .1); }
+
+.btn.wide { width: 100%; margin: 6px 0; }
+.tip { background: var(--teal-soft); color: #115e59; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin: 8px 0; }
+.progress { margin: 8px 2px 0; }
+
+/* 식단 */
+.day.today { border: 2px solid var(--teal); }
+.day h2 .badge { margin-left: 8px; }
+.bar { height: 6px; background: #eef2f7; border-radius: 99px; margin: 8px 0 6px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--teal); border-radius: 99px; }
+.meal { border-top: 1px solid #f1f5f9; padding: 8px 0; }
+.meal:first-of-type { border-top: none; }
+.meal-row { display: flex; align-items: center; gap: 8px; }
+.meal-name { flex: 1; text-align: left; background: none; border: none; font-size: 15px; font-weight: 600; color: var(--text); padding: 4px 0; }
+.meal-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.muted-link { color: var(--muted) !important; }
+.recipe { background: #f8fafc; border-radius: 12px; padding: 10px 12px; margin-top: 6px; font-size: 14px; line-height: 1.55; }
+.recipe ol, .recipe ul { margin: 4px 0 0; padding-left: 20px; }
+.r-title { font-weight: 700; margin: 8px 0 2px; }
+.r-text { margin: 0; color: #334155; }
+ul.plain { padding-left: 18px; margin: 6px 0 0; line-height: 1.6; font-size: 14px; }
+
+/* 장보기 · 약 체크 */
+.shop { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 16px; }
+.shop:last-child { border-bottom: none; }
+.shop input { width: 22px; height: 22px; accent-color: var(--teal); flex-shrink: 0; }
+.shop-name { flex: 1; }
+.shop-amt { color: var(--muted); font-size: 14px; }
+.shop.done .shop-name, .shop.done .shop-amt { text-decoration: line-through; color: #94a3b8; }
+.med-slot { margin-top: 10px; }
+.inactive { opacity: .65; }
+
+/* 약 입력 폼 */
+.field { display: block; margin-top: 12px; }
+.field > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+input.text, select.text { width: 100%; padding: 12px; border: 1.5px solid var(--line); border-radius: 12px; font-size: 16px; background: #fff; }
+.check.inline { margin: 0; font-size: 15px; }
+a { color: var(--teal); }
+
+/* 달력 */
+.cal-head h2 { margin: 0; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+.cal-w { text-align: center; font-size: 12px; color: var(--muted); padding-bottom: 2px; }
+.cal-d { aspect-ratio: 1 / 1; border: 1.5px solid transparent; border-radius: 10px; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--text); padding: 0; }
+.cal-d small { font-size: 10px; font-weight: 700; }
+.cal-d.today { border-color: var(--teal); }
+.cal-d.sel { box-shadow: 0 0 0 2px var(--teal); }
+.legend.wrap { flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; }
+.lg { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.lg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; border: 1px solid #e2e8f0; }

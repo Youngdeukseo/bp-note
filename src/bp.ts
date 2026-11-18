@@ -99,3 +99,25 @@ export function validateWeight(kg: number): string | null {
   if (kg < 20 || kg > 300) return "체중 수치를 확인해 주세요";
   return null;
 }
+
+/* ---------------- 약 · 복용 기록 ---------------- */
+export interface Med {
+  id: string;
+  name: string;
+  cls?: string; // 계열 키 (medinfo.ts)
+  dose?: string; // 예: "5mg 1정"
+  times: Slot[]; // 복용 시간대
+  active: boolean;
+  note?: string;
+}
+export interface MedLog {
+  date: string;
+  medId: string;
+  slot: Slot;
+  taken: boolean;
+}
+export interface Check {
+  weekStart: string;
+  key: string;
+  checked: boolean;
+}

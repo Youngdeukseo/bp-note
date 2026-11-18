@@ -1,16 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-
-// 접속 코드는 Convex 환경변수(EDIT_CODE, VIEW_CODE)로만 관리합니다.
-//   npx convex env set EDIT_CODE <기록용 코드>
-//   npx convex env set VIEW_CODE <보기용 코드>
-function roleOf(code: string): "edit" | "view" | null {
-  const edit = process.env.EDIT_CODE;
-  const view = process.env.VIEW_CODE;
-  if (edit && code === edit) return "edit";
-  if (view && code === view) return "view";
-  return null;
-}
+import { roleOf } from "./roles";
 
 export const list = query({
   args: { code: v.string() },

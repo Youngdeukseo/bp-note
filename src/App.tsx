@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
 import { useBackend } from "./backend";
+import { Seg, StageChip } from "./ui";
+import MealsTab from "./MealsTab";
+import ShoppingTab from "./ShoppingTab";
+import TrendTab from "./TrendTab";
+import MedsTab, { MedCheckCard } from "./MedsTab";
 import {
   SLOT_LABEL,
   addDays,
@@ -16,7 +21,7 @@ import {
   type Weight,
 } from "./bp";
 
-type Tab = "today" | "history";
+type Tab = "today" | "meals" | "shop" | "trend" | "more";
 
 export default function App() {
   const { role, mode, logout } = useBackend();
@@ -37,15 +42,28 @@ export default function App() {
         )}
       </header>
 
-      <main>{tab === "today" ? <TodayTab /> : <HistoryTab />}</main>
+      <main>
+        {tab === "today" && <TodayTab />}
+        {tab === "meals" && <MealsTab />}
+        {tab === "shop" && <ShoppingTab />}
+        {tab === "trend" && <TrendTab />}
+        {tab === "more" && <MoreTab />}
+      </main>
 
       <nav className="tabs">
-        <button className={tab === "today" ? "on" : ""} onClick={() => setTab("today")}>
-          오늘
-        </button>
-        <button className={tab === "history" ? "on" : ""} onClick={() => setTab("history")}>
-          기록
-        </button>
+        {(
+          [
+            ["today", "오늘"],
+            ["meals", "식단"],
+            ["shop", "장보기"],
+            ["trend", "추이"],
+            ["more", "더보기"],
+          ] as [Tab, string][]
+        ).map(([k, label]) => (
+          <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            {label}
+          </button>
+        ))}
       </nav>
 
       <PrintReport />
@@ -75,19 +93,11 @@ function TodayTab() {
       <div className="date-title">{fmtDate(today)}</div>
       <SlotCard slot="morning" date={today} />
       <SlotCard slot="evening" date={today} />
+      <MedCheckCard />
       <WeightCard />
       <Summary />
       <Chart />
     </>
-  );
-}
-
-function StageChip({ sys, dia }: { sys: number; dia: number }) {
-  const s = classify(sys, dia);
-  return (
-    <span className="chip" style={{ color: s.color, background: s.bg }}>
-      {s.label}
-    </span>
   );
 }
 
@@ -459,6 +469,26 @@ function Chart() {
 function daysBetween(a: string, b: string): number {
   const ms = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
   return Math.round((ms(b) - ms(a)) / 86400000);
+}
+
+/* ---------------- 더보기 (내 약 / 기록·백업) ---------------- */
+function MoreTab() {
+  const [sub, setSub] = useState<"meds" | "history">("meds");
+  return (
+    <>
+      <div className="week-head">
+        <Seg
+          value={sub}
+          onChange={setSub}
+          options={[
+            { value: "meds", label: "내 약" },
+            { value: "history", label: "기록·백업" },
+          ]}
+        />
+      </div>
+      {sub === "meds" ? <MedsTab /> : <HistoryTab />}
+    </>
+  );
 }
 
 /* ---------------- 기록 ---------------- */
