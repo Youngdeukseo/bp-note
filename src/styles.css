@@ -96,3 +96,12 @@ input:focus { outline: none; border-color: var(--teal); }
   .print-only th, .print-only td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
   html, body { background: #fff; }
 }
+
+.weight-row input { width: 110px; flex: none; }
+.weight-row .unit { color: var(--muted); }
+.weight-row .btn.primary { flex: none; }
+.big small.up { color: #c2410c; }
+.big small.down { color: #15803d; }
+.wchart { margin-top: 10px; }
+.chart .l-w { fill: none; stroke: #0ea5e9; stroke-width: 2; }
+.chart .d-w { fill: #0ea5e9; }

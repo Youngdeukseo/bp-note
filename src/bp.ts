@@ -78,3 +78,24 @@ export function validate(sys: number, dia: number, pulse?: number): string | nul
   if (pulse !== undefined && (pulse < 30 || pulse > 220)) return "맥박 수치를 확인해 주세요";
   return null;
 }
+
+/* ---------------- 체중 (주 1회) ---------------- */
+export interface Weight {
+  id: string;
+  date: string; // YYYY-MM-DD
+  kg: number;
+  note?: string;
+}
+
+// 월요일 시작 주의 첫날
+export function weekStart(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=일
+  return addDays(dateStr, -((dow + 6) % 7));
+}
+
+export function validateWeight(kg: number): string | null {
+  if (!Number.isFinite(kg)) return "체중을 입력해 주세요";
+  if (kg < 20 || kg > 300) return "체중 수치를 확인해 주세요";
+  return null;
+}

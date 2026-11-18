@@ -18,8 +18,10 @@ export const list = query({
     const role = roleOf(code);
     if (!role) return null;
     const rows = await ctx.db.query("readings").collect();
+    const ws = await ctx.db.query("weights").collect();
     return {
       role,
+      weights: ws.map((w) => ({ id: w._id as string, date: w.date, kg: w.kg, note: w.note })),
       readings: rows.map((r) => ({
         id: r._id as string,
         date: r.date,
@@ -61,6 +63,28 @@ export const save = mutation({
 
 export const remove = mutation({
   args: { code: v.string(), id: v.id("readings") },
+  handler: async (ctx, { code, id }) => {
+    if (roleOf(code) !== "edit") throw new Error("권한이 없습니다");
+    await ctx.db.delete(id);
+  },
+});
+
+export const saveWeight = mutation({
+  args: { code: v.string(), date: v.string(), kg: v.number(), note: v.optional(v.string()) },
+  handler: async (ctx, { code, ...data }) => {
+    if (roleOf(code) !== "edit") throw new Error("권한이 없습니다");
+    if (data.kg < 20 || data.kg > 300) throw new Error("체중을 확인해 주세요");
+    const existing = await ctx.db
+      .query("weights")
+      .withIndex("by_date", (q) => q.eq("date", data.date))
+      .first();
+    if (existing) await ctx.db.replace(existing._id, data);
+    else await ctx.db.insert("weights", data);
+  },
+});
+
+export const removeWeight = mutation({
+  args: { code: v.string(), id: v.id("weights") },
   handler: async (ctx, { code, id }) => {
     if (roleOf(code) !== "edit") throw new Error("권한이 없습니다");
     await ctx.db.delete(id);

@@ -1,17 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { makeFunctionReference } from "convex/server";
-import type { Reading } from "./bp";
+import type { Reading, Weight } from "./bp";
 
 export type Role = "edit" | "view";
 export type NewReading = Omit<Reading, "id">;
+export type NewWeight = Omit<Weight, "id">;
 
 interface Backend {
   mode: "local" | "cloud";
   role: Role;
   readings: Reading[];
+  weights: Weight[];
   save: (r: NewReading) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  saveWeight: (w: NewWeight) => Promise<void>;
+  removeWeight: (id: string) => Promise<void>;
   logout?: () => void;
 }
 
@@ -39,17 +43,39 @@ function loadLocal(): Reading[] {
   }
 }
 
+const LS_W_KEY = "bp.weights.v1";
+
+function loadLocalWeights(): Weight[] {
+  try {
+    return JSON.parse(localStorage.getItem(LS_W_KEY) ?? "[]") as Weight[];
+  } catch {
+    return [];
+  }
+}
+
 export function LocalBackend({ children }: { children: ReactNode }) {
   const [readings, setReadings] = useState<Reading[]>(loadLocal);
+  const [weights, setWeights] = useState<Weight[]>(loadLocalWeights);
   useEffect(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(readings));
   }, [readings]);
+  useEffect(() => {
+    localStorage.setItem(LS_W_KEY, JSON.stringify(weights));
+  }, [weights]);
 
   const value = useMemo<Backend>(
     () => ({
       mode: "local",
       role: "edit",
       readings,
+      weights,
+      saveWeight: async (w) => {
+        setWeights((prev) => {
+          const rest = prev.filter((x) => x.date !== w.date);
+          return [...rest, clean({ ...w, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` })];
+        });
+      },
+      removeWeight: async (id) => setWeights((prev) => prev.filter((x) => x.id !== id)),
       save: async (r) => {
         setReadings((prev) => {
           const rest = prev.filter((x) => !(x.date === r.date && x.slot === r.slot));
@@ -58,17 +84,19 @@ export function LocalBackend({ children }: { children: ReactNode }) {
       },
       remove: async (id) => setReadings((prev) => prev.filter((x) => x.id !== id)),
     }),
-    [readings]
+    [readings, weights]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 /* ---------------- 클라우드 모드 (Convex, 두 폰 동기화) ---------------- */
-const listRef = makeFunctionReference<"query", { code: string }, { role: Role; readings: Reading[] } | null>(
+const listRef = makeFunctionReference<"query", { code: string }, { role: Role; readings: Reading[]; weights: Weight[] } | null>(
   "readings:list"
 );
 const saveRef = makeFunctionReference<"mutation", { code: string } & NewReading, null>("readings:save");
 const removeRef = makeFunctionReference<"mutation", { code: string; id: string }, null>("readings:remove");
+const saveWeightRef = makeFunctionReference<"mutation", { code: string } & NewWeight, null>("readings:saveWeight");
+const removeWeightRef = makeFunctionReference<"mutation", { code: string; id: string }, null>("readings:removeWeight");
 
 const CODE_KEY = "bp.code";
 
@@ -77,6 +105,8 @@ export function CloudBackend({ children }: { children: ReactNode }) {
   const data = useQuery(listRef, code ? { code } : "skip");
   const saveM = useMutation(saveRef);
   const removeM = useMutation(removeRef);
+  const saveWM = useMutation(saveWeightRef);
+  const removeWM = useMutation(removeWeightRef);
 
   const logout = useCallback(() => {
     localStorage.removeItem(CODE_KEY);
@@ -89,6 +119,13 @@ export function CloudBackend({ children }: { children: ReactNode }) {
       mode: "cloud",
       role: data.role,
       readings: data.readings,
+      weights: data.weights ?? [],
+      saveWeight: async (w) => {
+        await saveWM(clean({ code, ...w }));
+      },
+      removeWeight: async (id) => {
+        await removeWM({ code, id });
+      },
       save: async (r) => {
         await saveM(clean({ code, ...r }));
       },
@@ -97,7 +134,7 @@ export function CloudBackend({ children }: { children: ReactNode }) {
       },
       logout,
     };
-  }, [data, code, saveM, removeM, logout]);
+  }, [data, code, saveM, removeM, saveWM, removeWM, logout]);
 
   if (!code || data === null) {
     return (

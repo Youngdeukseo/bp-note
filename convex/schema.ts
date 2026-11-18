@@ -11,4 +11,9 @@ export default defineSchema({
     meds: v.boolean(),
     note: v.optional(v.string()),
   }).index("by_date_slot", ["date", "slot"]),
+  weights: defineTable({
+    date: v.string(),
+    kg: v.number(),
+    note: v.optional(v.string()),
+  }).index("by_date", ["date"]),
 });

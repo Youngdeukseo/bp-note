@@ -9,8 +9,11 @@ import {
   sortDesc,
   todayStr,
   validate,
+  validateWeight,
+  weekStart,
   type Reading,
   type Slot,
+  type Weight,
 } from "./bp";
 
 type Tab = "today" | "history";
@@ -72,6 +75,7 @@ function TodayTab() {
       <div className="date-title">{fmtDate(today)}</div>
       <SlotCard slot="morning" date={today} />
       <SlotCard slot="evening" date={today} />
+      <WeightCard />
       <Summary />
       <Chart />
     </>
@@ -224,6 +228,138 @@ function ReadingForm({
   );
 }
 
+/* ---------------- 체중 (주 1회) ---------------- */
+function sortWeights(ws: Weight[]): Weight[] {
+  return [...ws].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+function WeightCard() {
+  const { weights, role, saveWeight } = useBackend();
+  const today = todayStr();
+  const sorted = useMemo(() => sortWeights(weights), [weights]);
+  const wk = weekStart(today);
+  const thisWeek = sorted.find((w) => w.date >= wk && w.date <= today);
+  const last = sorted[0];
+  const prev = thisWeek ? sorted.find((w) => w.date < wk) : sorted[0];
+  const canEdit = role === "edit";
+  const [editing, setEditing] = useState(false);
+  const [kg, setKg] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const showForm = canEdit && (!thisWeek || editing);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const n = Number(kg);
+    const msg = validateWeight(n);
+    if (msg) return setErr(msg);
+    setErr("");
+    setBusy(true);
+    try {
+      await saveWeight({ date: thisWeek?.date ?? today, kg: Math.round(n * 10) / 10 });
+      setEditing(false);
+      setKg("");
+    } catch {
+      setErr("저장에 실패했어요. 연결을 확인하고 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const diff = thisWeek && prev ? Math.round((thisWeek.kg - prev.kg) * 10) / 10 : null;
+
+  return (
+    <section className="card">
+      <div className="row between">
+        <h2>몸무게 (주 1회)</h2>
+        {canEdit && thisWeek && !editing && (
+          <button
+            className="link"
+            onClick={() => {
+              setKg(String(thisWeek.kg));
+              setEditing(true);
+            }}
+          >
+            수정
+          </button>
+        )}
+      </div>
+      {showForm ? (
+        <form onSubmit={submit}>
+          <p className="muted">
+            {thisWeek ? "이번 주 몸무게를 수정해요" : "이번 주 몸무게를 아직 기록하지 않았어요"}
+            {last && !thisWeek ? ` (지난 기록 ${last.kg}kg, ${fmtDate(last.date)})` : ""}
+          </p>
+          <div className="row gap weight-row">
+            <input inputMode="decimal" value={kg} onChange={(e) => setKg(e.target.value)} placeholder="72.5" aria-label="몸무게(kg)" />
+            <span className="unit">kg</span>
+            <button className="btn primary" type="submit" disabled={busy}>
+              {busy ? "저장 중…" : "저장"}
+            </button>
+            {thisWeek && (
+              <button className="btn" type="button" onClick={() => setEditing(false)}>
+                취소
+              </button>
+            )}
+          </div>
+          <p className="hint">매주 같은 요일 아침, 화장실 다녀온 뒤 공복에 재면 비교하기 좋아요.</p>
+          {err && <p className="error">{err}</p>}
+        </form>
+      ) : thisWeek ? (
+        <>
+          <div className="big">
+            {thisWeek.kg}
+            <small>kg</small>
+            {diff !== null && (
+              <small className={diff > 0 ? "up" : diff < 0 ? "down" : ""}>
+                {diff === 0 ? "지난 기록과 같음" : `지난 기록 대비 ${diff > 0 ? "+" : ""}${diff}kg`}
+              </small>
+            )}
+          </div>
+          <p className="muted">{fmtDate(thisWeek.date)} 기록</p>
+        </>
+      ) : (
+        <p className="muted">{last ? `이번 주 기록 없음 · 마지막 ${last.kg}kg (${fmtDate(last.date)})` : "아직 기록이 없어요"}</p>
+      )}
+      <WeightChart weights={sorted} />
+    </section>
+  );
+}
+
+function WeightChart({ weights }: { weights: Weight[] }) {
+  const pts = [...weights].reverse().slice(-12);
+  if (pts.length < 2) return null;
+  const W = 320, H = 110, L = 30, R = 8, T = 10, B = 20;
+  const vals = pts.map((p) => p.kg);
+  const lo = Math.floor(Math.min(...vals) - 1);
+  const hi = Math.ceil(Math.max(...vals) + 1);
+  const X = (i: number) => L + (i / (pts.length - 1)) * (W - L - R);
+  const Y = (v: number) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="체중 추이" className="chart wchart">
+      {[lo, hi].map((v) => (
+        <g key={v}>
+          <line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} className="grid" />
+          <text x={L - 4} y={Y(v) + 3} className="axis" textAnchor="end">
+            {v}
+          </text>
+        </g>
+      ))}
+      <polyline points={pts.map((p, i) => `${X(i)},${Y(p.kg)}`).join(" ")} className="l-w" />
+      {pts.map((p, i) => (
+        <circle key={p.id} cx={X(i)} cy={Y(p.kg)} r="3" className="d-w" />
+      ))}
+      <text x={X(0)} y={H - 5} className="axis" textAnchor="start">
+        {fmtDate(pts[0].date).split(" ")[0]}
+      </text>
+      <text x={X(pts.length - 1)} y={H - 5} className="axis" textAnchor="end">
+        {fmtDate(pts[pts.length - 1].date).split(" ")[0]}
+      </text>
+    </svg>
+  );
+}
+
 function Summary() {
   const { readings } = useBackend();
   const rows: { label: string; slot?: Slot }[] = [
@@ -327,13 +463,13 @@ function daysBetween(a: string, b: string): number {
 
 /* ---------------- 기록 ---------------- */
 function HistoryTab() {
-  const { readings, role, remove, save } = useBackend();
+  const { readings, weights, role, remove, save, saveWeight, removeWeight } = useBackend();
   const sorted = useMemo(() => sortDesc(readings), [readings]);
   const dates = [...new Set(sorted.map((r) => r.date))];
   const [msg, setMsg] = useState("");
 
   function backup() {
-    const blob = new Blob([JSON.stringify(readings, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ readings, weights }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `bp-note-backup-${todayStr()}.json`;
@@ -343,8 +479,15 @@ function HistoryTab() {
 
   async function restore(file: File) {
     try {
-      const arr = JSON.parse(await file.text()) as Reading[];
+      const parsed = JSON.parse(await file.text()) as Reading[] | { readings?: Reading[]; weights?: Weight[] };
+      const arr = Array.isArray(parsed) ? parsed : parsed.readings ?? [];
+      const warr = Array.isArray(parsed) ? [] : parsed.weights ?? [];
       let n = 0;
+      for (const w of warr) {
+        if (!w.date || validateWeight(w.kg)) continue;
+        await saveWeight({ date: w.date, kg: w.kg, note: w.note });
+        n++;
+      }
       for (const r of arr) {
         if (!r.date || !r.slot || validate(r.sys, r.dia, r.pulse)) continue;
         await save({ date: r.date, slot: r.slot, sys: r.sys, dia: r.dia, pulse: r.pulse, meds: !!r.meds, note: r.note });
@@ -373,7 +516,28 @@ function HistoryTab() {
         )}
       </div>
       {msg && <p className="hint">{msg}</p>}
-      {dates.length === 0 && <p className="muted center-text">아직 기록이 없어요</p>}
+      {weights.length > 0 && (
+        <section className="card">
+          <h2>몸무게</h2>
+          {sortWeights(weights).map((w) => (
+            <div className="hist" key={w.id}>
+              <span className="avg-label">{fmtDate(w.date)}</span>
+              <b>{w.kg}kg</b>
+              {role === "edit" && (
+                <button
+                  className="link danger"
+                  onClick={() => {
+                    if (confirm(`${fmtDate(w.date)} 몸무게 기록을 삭제할까요?`)) removeWeight(w.id);
+                  }}
+                >
+                  삭제
+                </button>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+      {dates.length === 0 && weights.length === 0 && <p className="muted center-text">아직 기록이 없어요</p>}
       {dates.map((d) => (
         <section className="card" key={d}>
           <h2>{fmtDate(d)}</h2>
@@ -409,7 +573,7 @@ function HistoryTab() {
 
 /* ---------------- 진료용 인쇄 (화면에는 숨김) ---------------- */
 function PrintReport() {
-  const { readings } = useBackend();
+  const { readings, weights } = useBackend();
   const today = todayStr();
   const from = addDays(today, -29);
   const rows = sortDesc(readings).filter((r) => r.date >= from);
@@ -422,6 +586,15 @@ function PrintReport() {
         출력일 {today} · 7일 평균 {a7 ? `${a7.sys}/${a7.dia} (${a7.count}회)` : "-"} · 30일 평균{" "}
         {a30 ? `${a30.sys}/${a30.dia} (${a30.count}회)` : "-"}
       </p>
+      {weights.length > 0 && (
+        <p>
+          몸무게:{" "}
+          {sortWeights(weights)
+            .slice(0, 6)
+            .map((w) => `${fmtDate(w.date).split(" ")[0]} ${w.kg}kg`)
+            .join(" · ")}
+        </p>
+      )}
       <table>
         <thead>
           <tr>
