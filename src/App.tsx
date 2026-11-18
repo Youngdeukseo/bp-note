@@ -24,7 +24,7 @@ import {
 type Tab = "today" | "meals" | "shop" | "trend" | "more";
 
 export default function App() {
-  const { role, mode, logout } = useBackend();
+  const { role, mode } = useBackend();
   const [tab, setTab] = useState<Tab>("today");
 
   return (
@@ -35,11 +35,6 @@ export default function App() {
           <span className={`badge ${role}`}>{role === "edit" ? "기록 모드" : "보기 모드"}</span>
           {mode === "local" && <span className="badge local">이 기기에만 저장</span>}
         </div>
-        {logout && (
-          <button className="link" onClick={logout}>
-            코드 변경
-          </button>
-        )}
       </header>
 
       <main>
