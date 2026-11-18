@@ -7,3 +7,7 @@ apk/android/.gradle
 apk/android/build
 apk/android/app/build
 apk/android/capacitor-cordova-android-plugins/build
+
+# signing keys
+*.jks
+*.keystore
