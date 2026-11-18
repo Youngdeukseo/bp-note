@@ -2,3 +2,8 @@ node_modules
 dist
 .env.local
 .convex
+apk/node_modules
+apk/android/.gradle
+apk/android/build
+apk/android/app/build
+apk/android/capacitor-cordova-android-plugins/build

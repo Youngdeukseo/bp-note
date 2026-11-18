@@ -1,0 +1,11 @@
+{
+  "appId": "com.bpnote.app",
+  "appName": "혈압 노트",
+  "webDir": "www",
+  "server": {
+    "url": "https://youngdeukseo.github.io/bp-note/",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": { "allowMixedContent": false }
+}

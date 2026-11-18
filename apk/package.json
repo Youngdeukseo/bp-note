@@ -1,0 +1,12 @@
+{
+  "name": "bp-note-apk",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
