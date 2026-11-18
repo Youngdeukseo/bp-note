@@ -9,6 +9,7 @@ import {
   SODIUM_TARGET,
   dayOfWeekLabel,
   daySodium,
+  eatKey,
   generatePlan,
   swapSlot,
   weekRange,
@@ -18,7 +19,7 @@ import {
 import { usePlan } from "./usePlan";
 
 export default function MealsTab() {
-  const { role, savePlan } = useBackend();
+  const { role, savePlan, checks, setCheck } = useBackend();
   const today = todayStr();
   const thisWs = weekStart(today);
   const [which, setWhich] = useState<0 | 1>(0);
@@ -53,6 +54,9 @@ export default function MealsTab() {
           day={day}
           isToday={i === todayIdx}
           canEdit={canEdit}
+          eaten={(slot) => checks.some((c) => c.weekStart === ws && c.key === eatKey(addDays(ws, i), slot) && c.checked)}
+          onEat={(slot, on) => void setCheck(ws, eatKey(addDays(ws, i), slot), on)}
+          past={addDays(ws, i) <= today}
           onSwap={(slot) => update(swapSlot(plan, i, slot))}
           onSkip={(slot) => update({ ...plan, days: plan.days.map((d, k) => (k === i ? { ...d, [slot]: "skip" } : d)) })}
           onRestore={(slot) => update(swapSlot({ ...plan, days: plan.days.map((d, k) => (k === i ? { ...d, [slot]: "x" } : d)) }, i, slot))}
@@ -73,7 +77,7 @@ export default function MealsTab() {
       )}
       <p className="hint">
         나트륨은 저염으로 조리했을 때의 추정치예요(실제와 다를 수 있어요). 하루 목표 {SODIUM_TARGET.toLocaleString()}mg(소금 약 5g) 기준이고,
-        국물은 남기고 간은 약하게 하세요. 식단은 매주 새로 짜이고, 지난주와 겹치지 않게 구성돼요.
+        국물은 남기고 간은 약하게 하세요. 먹은 끼니에 체크하면 실제로 먹은 나트륨(추정)이 합산돼요. 식단은 매주 새로 짜이고, 지난주와 겹치지 않게 구성돼요.
       </p>
     </>
   );
@@ -85,6 +89,9 @@ function DayCard({
   day,
   isToday,
   canEdit,
+  eaten,
+  onEat,
+  past,
   onSwap,
   onSkip,
   onRestore,
@@ -94,6 +101,9 @@ function DayCard({
   day: Plan["days"][number];
   isToday: boolean;
   canEdit: boolean;
+  eaten: (s: SlotKey) => boolean;
+  onEat: (s: SlotKey, on: boolean) => void;
+  past: boolean; // 오늘 이전(포함) 날짜만 먹은 것 체크
   onSwap: (s: SlotKey) => void;
   onSkip: (s: SlotKey) => void;
   onRestore: (s: SlotKey) => void;
@@ -101,6 +111,8 @@ function DayCard({
   const [open, setOpen] = useState<SlotKey | null>(null);
   const sodium = daySodium(day);
   const pct = Math.min(100, Math.round((sodium / SODIUM_TARGET) * 100));
+  const eatenSodium = SLOT_KEYS.reduce((n, k) => n + (eaten(k) ? RECIPE_MAP[day[k]]?.sodium ?? 0 : 0), 0);
+  const eatenCount = SLOT_KEYS.filter((k) => eaten(k) && RECIPE_MAP[day[k]]).length;
   return (
     <section className={`card day ${isToday ? "today" : ""}`}>
       <div className="row between">
@@ -108,7 +120,9 @@ function DayCard({
           {dayOfWeekLabel(idx)} {Number(date.slice(5, 7))}/{Number(date.slice(8, 10))}
           {isToday && <span className="badge edit">오늘</span>}
         </h2>
-        <span className="muted">나트륨 약 {sodium.toLocaleString()}mg</span>
+        <span className="muted">
+          {eatenCount > 0 ? `먹은 것 약 ${eatenSodium.toLocaleString()}mg / 계획 ${sodium.toLocaleString()}mg` : `나트륨 약 ${sodium.toLocaleString()}mg`}
+        </span>
       </div>
       <div className="bar" aria-label={`나트륨 ${pct}%`}>
         <div style={{ width: `${pct}%` }} />
@@ -121,6 +135,16 @@ function DayCard({
           <div key={k} className="meal">
             <div className="meal-row">
               <span className="avg-label">{SLOT_NAME[k]}</span>
+              {!skipped && past && (
+                <input
+                  type="checkbox"
+                  className="eat"
+                  aria-label={`${SLOT_NAME[k]} 먹음`}
+                  checked={eaten(k)}
+                  disabled={!canEdit}
+                  onChange={(e) => onEat(k, e.target.checked)}
+                />
+              )}
               <button className="meal-name" onClick={() => !skipped && setOpen(open === k ? null : k)} disabled={skipped}>
                 {skipped ? <span className="muted">먹지 않음 / 외식</span> : r.name}
               </button>

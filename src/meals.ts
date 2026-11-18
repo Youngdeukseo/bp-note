@@ -1,5 +1,5 @@
 import { CAT_ORDER, RECIPES, RECIPE_MAP, type Cat, type MealType, type Recipe } from "./recipes";
-import { addDays, weekStart } from "./bp";
+import { addDays, weekStart, type Check } from "./bp";
 
 export type SlotKey = "b" | "l" | "d";
 export const SLOT_KEYS: SlotKey[] = ["b", "l", "d"];
@@ -176,3 +176,43 @@ export function weekRange(ws: string): string {
 }
 
 export { weekStart };
+
+
+/* ---------------- 먹은 끼니 기록 (checks 테이블 재사용) ---------------- */
+export const eatKey = (date: string, slot: SlotKey) => `eat:${date}:${slot}`;
+
+export interface DayIntake {
+  date: string;
+  planned: number; // 계획된 끼니 수 (빼기한 끼니 제외)
+  eaten: number; // 먹었다고 체크한 끼니 수
+  sodium: number; // 먹은 끼니의 나트륨 합계(추정, mg)
+  complete: boolean; // 계획된 끼니를 모두 체크
+}
+
+/** from~to(포함) 사이 날짜별 식사 기록. 계획이 없는 날은 건너뜀 */
+export function intakeByDay(plans: Plan[], checks: Check[], from: string, to: string): DayIntake[] {
+  const out: DayIntake[] = [];
+  const done = new Set(checks.filter((c) => c.checked && c.key.startsWith("eat:")).map((c) => `${c.weekStart}|${c.key}`));
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const ws = weekStart(d);
+    const plan = plans.find((p) => p.weekStart === ws);
+    if (!plan) continue;
+    const idx = Math.round((Date.parse(d) - Date.parse(ws)) / 86400000);
+    const day = plan.days[idx];
+    if (!day) continue;
+    let planned = 0;
+    let eaten = 0;
+    let sodium = 0;
+    for (const k of SLOT_KEYS) {
+      const r = RECIPE_MAP[day[k]];
+      if (!r) continue;
+      planned++;
+      if (done.has(`${ws}|${eatKey(d, k)}`)) {
+        eaten++;
+        sodium += r.sodium;
+      }
+    }
+    out.push({ date: d, planned, eaten, sodium, complete: planned >= 2 && eaten === planned });
+  }
+  return out;
+}

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useBackend } from "./backend";
 import { SLOT_LABEL, addDays, average, classify, fmtDate, todayStr, type Reading } from "./bp";
 import { Seg, StageChip } from "./ui";
+import { SODIUM_TARGET, intakeByDay } from "./meals";
 
 const RANK: Record<string, number> = { ok: 0, elev: 1, pre: 2, s1: 3, s2: 4, crisis: 5 };
 const GOAL_SYS = 135;
@@ -283,6 +284,76 @@ function GraphView() {
           <span className="muted">{GOAL_SYS}/{GOAL_DIA} 미만 비율</span>
         </div>
       </section>
+      <IntakeCard />
     </>
+  );
+}
+
+/* ---------------- 먹은 식단 나트륨 vs 혈압 (최근 14일) ---------------- */
+function IntakeCard() {
+  const { plans, checks, readings, ready } = useBackend();
+  const today = todayStr();
+  const from = addDays(today, -13);
+  const days = intakeByDay(plans, checks, from, today).filter((d) => d.eaten > 0);
+  const all = intakeByDay(plans, checks, from, today);
+  const planned = all.reduce((n, d) => n + d.planned, 0);
+  const eaten = all.reduce((n, d) => n + d.eaten, 0);
+  if (!ready) return null;
+  const complete = days.filter((d) => d.complete);
+  const avgSodium = complete.length ? Math.round(complete.reduce((n, d) => n + d.sodium, 0) / complete.length) : null;
+  const map = byDate(readings.filter((r) => r.date >= from && r.date <= today));
+  return (
+    <section className="card">
+      <h2>식사 나트륨과 혈압 (최근 14일)</h2>
+      {days.length === 0 ? (
+        <p className="muted">식단 탭에서 먹은 끼니에 체크하면 여기에 하루 나트륨과 그날 평균 혈압이 나란히 보여요.</p>
+      ) : (
+        <>
+          <div className="avg">
+            <span className="avg-label">실천</span>
+            <b>{planned ? Math.round((eaten / planned) * 100) : 0}%</b>
+            <span className="muted">
+              계획한 {planned}끼 중 {eaten}끼 체크
+            </span>
+          </div>
+          {avgSodium !== null && (
+            <div className="avg">
+              <span className="avg-label">나트륨</span>
+              <b>{avgSodium.toLocaleString()}mg</b>
+              <span className="muted">하루 평균 (모두 체크한 {complete.length}일, 목표 {SODIUM_TARGET.toLocaleString()})</span>
+            </div>
+          )}
+          <table className="mini">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>끼니</th>
+                <th>나트륨</th>
+                <th>그날 평균 혈압</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...days].reverse().map((d) => {
+                const rs = map.get(d.date) ?? [];
+                const bp = rs.length
+                  ? `${Math.round(rs.reduce((a, r) => a + r.sys, 0) / rs.length)}/${Math.round(rs.reduce((a, r) => a + r.dia, 0) / rs.length)}`
+                  : "-";
+                return (
+                  <tr key={d.date}>
+                    <td>{fmtDate(d.date).split(" ")[0]}</td>
+                    <td>
+                      {d.eaten}/{d.planned}
+                    </td>
+                    <td>{d.sodium.toLocaleString()}mg</td>
+                    <td>{bp}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="hint">레시피 기준 추정치이고 체크한 끼니만 합산해요. 며칠 기록으로 원인을 단정할 수는 없고, 참고용으로만 보세요.</p>
+        </>
+      )}
+    </section>
   );
 }

@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBackend } from "./backend";
 import { Seg, StageChip } from "./ui";
 import MealsTab from "./MealsTab";
 import ShoppingTab from "./ShoppingTab";
 import TrendTab from "./TrendTab";
 import MedsTab, { MedCheckCard } from "./MedsTab";
+import ReportTab from "./ReportTab";
+import ReminderCard from "./ReminderCard";
+import { syncRemind } from "./notify";
 import {
   SLOT_LABEL,
   addDays,
@@ -26,6 +29,9 @@ type Tab = "today" | "meals" | "shop" | "trend" | "more";
 export default function App() {
   const { role, mode } = useBackend();
   const [tab, setTab] = useState<Tab>("today");
+  useEffect(() => {
+    syncRemind();
+  }, []);
 
   return (
     <div className="app">
@@ -468,7 +474,7 @@ function daysBetween(a: string, b: string): number {
 
 /* ---------------- 더보기 (내 약 / 기록·백업) ---------------- */
 function MoreTab() {
-  const [sub, setSub] = useState<"meds" | "history">("meds");
+  const [sub, setSub] = useState<"meds" | "report" | "history">("meds");
   return (
     <>
       <div className="week-head">
@@ -477,11 +483,19 @@ function MoreTab() {
           onChange={setSub}
           options={[
             { value: "meds", label: "내 약" },
+            { value: "report", label: "진료 리포트" },
             { value: "history", label: "기록·백업" },
           ]}
         />
       </div>
-      {sub === "meds" ? <MedsTab /> : <HistoryTab />}
+      {sub === "meds" && (
+        <>
+          <MedsTab />
+          <ReminderCard />
+        </>
+      )}
+      {sub === "report" && <ReportTab />}
+      {sub === "history" && <HistoryTab />}
     </>
   );
 }

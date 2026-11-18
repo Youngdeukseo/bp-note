@@ -164,3 +164,25 @@ a { color: var(--teal); }
 .legend.wrap { flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; }
 .lg { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
 .lg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; border: 1px solid #e2e8f0; }
+
+.eat { width: 22px; height: 22px; accent-color: #0f766e; flex: none; }
+table.mini { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+table.mini th, table.mini td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #e5eceb; }
+table.mini th { color: var(--muted); font-weight: 600; font-size: 13px; }
+
+.btn.wide { display: block; width: 100%; margin-top: 10px; }
+.btn.ghost { background: transparent; }
+.note-box { width: 100%; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 15px; resize: vertical; background: #fff; color: var(--text); }
+.print-note { display: none; white-space: pre-wrap; }
+.remind-row { padding: 10px 0; border-bottom: 1px solid #e5eceb; font-size: 15px; }
+.remind-row input[type=time] { font: inherit; border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; background: #fff; color: var(--text); }
+@media print {
+  body.print-report .app > .print-only { display: none !important; }
+  body.print-report .app > main { display: block !important; }
+  body.print-report .app > main > *:not(.report-root) { display: none !important; }
+  body.print-report .report-root .no-print { display: none !important; }
+  body.print-report .report-root .note-box { display: none !important; }
+  body.print-report .report-root .print-note { display: block !important; }
+  body.print-report .report-root .card { break-inside: avoid; box-shadow: none; border: 1px solid #999; margin-bottom: 8px; }
+}
+.report-root .avg-label { width: 56px; flex: none; }
