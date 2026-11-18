@@ -24,10 +24,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # Convex 함수 배포 + 배포된 주소(VITE_CONVEX_URL)를 넣어 프론트 빌드
+      # 저장소 Settings > Secrets and variables > Actions > Secrets 에 CONVEX_DEPLOY_KEY 등록 필요
+      - run: npx convex deploy --typecheck=disable --cmd 'npm run build' --cmd-url-env-var-name VITE_CONVEX_URL
         env:
-          # 저장소 Settings > Secrets and variables > Actions > Variables 에 등록
-          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

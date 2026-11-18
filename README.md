@@ -4,14 +4,13 @@
 
 ## 처음 설정 (1회)
 
-1. `npm install`
-2. `npx convex dev` — GitHub 로그인 후 새 프로젝트 생성 (`convex/_generated`가 만들어짐)
-3. 접속 코드 설정 (12자 이상 권장, 서로 다르게):
-   - `npx convex env set EDIT_CODE <기록용 코드>`
-   - `npx convex env set VIEW_CODE <보기용 코드>`
-4. `.env.local`의 `CONVEX_URL` 값을 GitHub 저장소 Variables에 `VITE_CONVEX_URL`로 등록
-5. 저장소 Settings > Pages > Source를 **GitHub Actions**로 설정
-6. `main`에 push하면 자동 배포
+1. Convex에서 프로젝트 생성 → Settings > Deploy Keys 에서 **Production** 키 생성
+2. GitHub 저장소 Settings > Secrets and variables > Actions > Secrets 에 `CONVEX_DEPLOY_KEY` 등록
+3. Convex 대시보드 > Production 배포 > Settings > Environment Variables 에 접속 코드 2개 등록 (12자 이상, 서로 다르게)
+   - `EDIT_CODE` : 기록용
+   - `VIEW_CODE` : 보기용
+4. 저장소 Settings > Pages > Source를 **GitHub Actions**로 설정
+5. `main`에 push하면 Convex 함수 배포 + 사이트 빌드/배포가 자동으로 진행됨
 
 ## 개발
 
