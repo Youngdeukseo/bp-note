@@ -32,7 +32,7 @@ export default function App() {
       <header className="top">
         <div>
           <h1>혈압 노트</h1>
-          <span className={`badge ${role}`}>{role === "edit" ? "기록 모드" : "보기 모드"}</span>
+          <span className={`badge ${role}`}>{role === "edit" ? "기록 모드" : "공유 모드"}</span>
           {mode === "local" && <span className="badge local">이 기기에만 저장</span>}
         </div>
       </header>
@@ -48,11 +48,11 @@ export default function App() {
       <nav className="tabs">
         {(
           [
-            ["today", "오늘"],
+            ["today", "혈압노트"],
             ["meals", "식단"],
             ["shop", "장보기"],
             ["trend", "추이"],
-            ["more", "더보기"],
+            ["more", "약"],
           ] as [Tab, string][]
         ).map(([k, label]) => (
           <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>

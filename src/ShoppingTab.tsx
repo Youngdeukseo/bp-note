@@ -16,7 +16,7 @@ export default function ShoppingTab() {
   const ws = which === 0 ? thisWs : addDays(thisWs, 7);
   const { plan } = usePlan(ws);
   const items = shoppingList(plan);
-  const canEdit = role === "edit";
+  const canEdit = !!role;
   const [showPantry, setShowPantry] = useState(false);
 
   const isChecked = (key: string) => checks.some((c) => c.weekStart === ws && c.key === key && c.checked);

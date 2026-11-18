@@ -24,7 +24,7 @@ export default function MealsTab() {
   const [which, setWhich] = useState<0 | 1>(0);
   const ws = which === 0 ? thisWs : addDays(thisWs, 7);
   const { plan, prev } = usePlan(ws);
-  const canEdit = role === "edit";
+  const canEdit = !!role;
   const todayIdx = ws === thisWs ? Math.round((Date.parse(today) - Date.parse(thisWs)) / 86400000) : -1;
 
   async function update(p: Plan) {

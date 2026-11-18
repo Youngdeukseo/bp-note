@@ -47,7 +47,7 @@ export const savePlan = mutation({
     days: v.array(v.object({ b: v.string(), l: v.string(), d: v.string() })),
   },
   handler: async (ctx, { code, ...data }) => {
-    if (roleOf(code) !== "edit") throw new Error("권한이 없습니다");
+    if (!roleOf(code)) throw new Error("권한이 없습니다");
     const existing = await ctx.db
       .query("plans")
       .withIndex("by_week", (q) => q.eq("weekStart", data.weekStart))
@@ -60,7 +60,7 @@ export const savePlan = mutation({
 export const setCheck = mutation({
   args: { code: v.string(), weekStart: v.string(), key: v.string(), checked: v.boolean() },
   handler: async (ctx, { code, ...data }) => {
-    if (roleOf(code) !== "edit") throw new Error("권한이 없습니다");
+    if (!roleOf(code)) throw new Error("권한이 없습니다");
     const existing = await ctx.db
       .query("checks")
       .withIndex("by_week_key", (q) => q.eq("weekStart", data.weekStart).eq("key", data.key))

@@ -13,7 +13,7 @@ export function usePlan(ws: string): { plan: Plan; prev?: Plan } {
   const saved = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!ready || role !== "edit" || stored || saved.current.has(ws)) return;
+    if (!ready || !role || stored || saved.current.has(ws)) return;
     saved.current.add(ws);
     void savePlan(generated);
   }, [ready, role, stored, ws, generated, savePlan]);
